@@ -11,19 +11,49 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://andaeiii:pass1234@localhost/ppr
 db = SQLAlchemy(app)
 
 
-class Blogpost(db.Model):
+# curuser = None  # let the curuser = none on start...
+
+
+class User(db.Model):
+    __tablename__ = "users"
     id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(255), unique=True)
+    password = db.Column(db.String(255))
+    created_at = db.Column(db.DateTime, default=datetime.now())
+    updated_at = db.Column(db.DateTime, onupdate=datetime.now())
+
+    # # relationships.. one profile(uselist=false, and many blogposts...)
+    profile = db.relationship('Profile', backref='user', uselist=False)
+    blogs = db.relationship('Blog', backref='user', uselist=True)
+
+
+class Profile(db.Model):
+    __tablename__ = "profiles"
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    surname = db.Column(db.String(50))
+    lastname = db.Column(db.String(50))
+    occupation = db.Column(db.String(250))
+    created_at = db.Column(db.DateTime, default=datetime.now())
+    updated_at = db.Column(db.DateTime, onupdate=datetime.now())
+
+
+class Blogpost(db.Model):
+    __tablename__ = "blogposts"
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     title = db.Column(db.String(50))
     subtitle = db.Column(db.String(50))
     author = db.Column(db.String(20))
     content = db.Column(db.Text)
-    date_posted = db.Column(db.DateTime)
+    created_at = db.Column(db.DateTime, default=datetime.now())
+    updated_at = db.Column(db.DateTime, onupdate=datetime.now())
 
 
 @app.route('/')
 def index():
 
-    p = Blogpost.query.order_by(Blogpost.date_posted).all()
+    p = Blogpost.query.all()
     return render_template('index.html', posts=p)
 
 
@@ -47,6 +77,15 @@ def contact():
 @app.route('/add')
 def add():
     return render_template('add.html')
+
+
+# # initialize the user...
+# def getUser():
+#     curuser = User(email='andaeiii@aol.com', password='123456')
+#     db.session.add(curuser)
+#     db.session.commit()
+
+#     pprint(curuser)
 
 
 @app.route('/addpost', methods=['POST'])
